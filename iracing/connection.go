@@ -7,12 +7,16 @@ import (
 	"github.com/riccardotornesello/irsdk-go"
 )
 
+var tyreCodes = [4]string{"LF", "RF", "LR", "RR"}
+var tyrePos = [3]string{"L", "M", "R"}
+
 type IRacingConnection struct {
 	irsdk *irsdk.IRSDK
 
-	drivers   *[]common.Driver
-	event     *common.Event
-	telemetry *common.Telemetry
+	isConnected bool
+	drivers     *[]common.Driver
+	event       *common.Event
+	telemetry   *common.Telemetry
 }
 
 func NewConnection() *IRacingConnection {
@@ -31,42 +35,83 @@ func (c *IRacingConnection) Start(updateDelay int) {
 	for {
 		c.irsdk.Update(true)
 
-		session := c.irsdk.Session
+		c.isConnected = c.irsdk.IsConnected()
 
-		drivers := make([]common.Driver, len(session.DriverInfo.Drivers))
+		if c.isConnected {
 
-		positions := c.irsdk.Telemetry["CarIdxPosition"].Array().([]int)
-		lastLapTimes := c.irsdk.Telemetry["CarIdxLastLapTime"].Array().([]float32)
-		bestLapTimes := c.irsdk.Telemetry["CarIdxBestLapTime"].Array().([]float32)
+			session := c.irsdk.Session
 
-		throttle := c.irsdk.Telemetry["Throttle"].Value().(float32)
+			drivers := make([]common.Driver, len(session.DriverInfo.Drivers))
 
-		for i, driver := range session.DriverInfo.Drivers {
-			carIdx := driver.CarIdx
-			drivers[i] = common.Driver{
-				DriverName:  driver.UserName,
-				TeamName:    driver.TeamName,
-				Position:    positions[carIdx],
-				CarNumber:   driver.CarNumberRaw,
-				LastLapTime: lastLapTimes[carIdx],
-				BestLapTime: bestLapTimes[carIdx],
-				Rating:      driver.IRating,
+			positions := c.irsdk.Telemetry["CarIdxPosition"].Array().([]int)
+			lastLapTimes := c.irsdk.Telemetry["CarIdxLastLapTime"].Array().([]float32)
+			bestLapTimes := c.irsdk.Telemetry["CarIdxBestLapTime"].Array().([]float32)
+			gaps := c.irsdk.Telemetry["CarIdxEstTime"].Array().([]float32)
+
+			throttle := c.irsdk.Telemetry["Throttle"].Value().(float32)
+			brake := c.irsdk.Telemetry["Brake"].Value().(float32)
+			steerAngle := c.irsdk.Telemetry["SteeringWheelAngle"].Value().(float32)
+			steerMax := c.irsdk.Telemetry["SteeringWheelAngleMax"].Value().(float32)
+			steer := steerAngle / steerMax
+
+			tyres := [4]common.Tyre{}
+			for i, code := range tyreCodes {
+				tyres[i] = common.Tyre{
+					TempCarcass: [3]float32{},
+					TempSurface: [3]float32{},
+				}
+				for j, pos := range tyrePos {
+					carcass, ok := c.irsdk.GetVar(code + "tempC" + pos)
+					if !ok {
+						tyres[i].TempCarcass[j] = 0
+					} else {
+						tyres[i].TempCarcass[j] = carcass.(float32)
+					}
+
+					surface, ok := c.irsdk.GetVar(code + "temp" + pos)
+					if !ok {
+						tyres[i].TempSurface[j] = 0
+					} else {
+						tyres[i].TempSurface[j] = surface.(float32)
+					}
+				}
 			}
+
+			for i, driver := range session.DriverInfo.Drivers {
+				carIdx := driver.CarIdx
+				drivers[i] = common.Driver{
+					Id:          driver.UserID,
+					DriverName:  driver.UserName,
+					TeamName:    driver.TeamName,
+					Position:    positions[carIdx],
+					CarNumber:   driver.CarNumberRaw,
+					LastLapTime: lastLapTimes[carIdx],
+					BestLapTime: bestLapTimes[carIdx],
+					Rating:      driver.IRating,
+					Gap:         gaps[carIdx],
+				}
+			}
+
+			event := common.Event{
+				TrackName: session.WeekendInfo.TrackDisplayName,
+			}
+
+			telemetry := common.Telemetry{
+				Throttle: throttle,
+				Brake:    brake,
+				Steer:    steer,
+
+				Tyres: tyres,
+			}
+
+			c.drivers = &drivers
+			c.event = &event
+			c.telemetry = &telemetry
+
+			time.Sleep(time.Duration(updateDelay) * time.Millisecond)
+		} else {
+			time.Sleep(1000 * time.Millisecond)
 		}
-
-		event := common.Event{
-			TrackName: session.WeekendInfo.TrackDisplayName,
-		}
-
-		telemetry := common.Telemetry{
-			Throttle: throttle,
-		}
-
-		c.drivers = &drivers
-		c.event = &event
-		c.telemetry = &telemetry
-
-		time.Sleep(time.Duration(updateDelay) * time.Millisecond)
 	}
 }
 
