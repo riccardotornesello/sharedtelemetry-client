@@ -13,3 +13,7 @@ type Driver struct {
 type Event struct {
 	TrackName string `json:"trackName"`
 }
+
+type Telemetry struct {
+	Throttle float32 `json:"throttle"`
+}
