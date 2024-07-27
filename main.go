@@ -53,7 +53,7 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection) {
 			hub.broadcast <- telemetryOutput
 		}
 
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 
@@ -64,7 +64,7 @@ func main() {
 	go hub.run()
 
 	iRacingConnection := iracing.NewConnection()
-	go iRacingConnection.Start(10)
+	go iRacingConnection.Start(10, 1000)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)

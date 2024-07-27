@@ -31,7 +31,7 @@ func NewConnection() *IRacingConnection {
 	}
 }
 
-func (c *IRacingConnection) Start(updateDelay int) {
+func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 	for {
 		c.irsdk.Update(true)
 
@@ -110,7 +110,7 @@ func (c *IRacingConnection) Start(updateDelay int) {
 
 			time.Sleep(time.Duration(updateDelay) * time.Millisecond)
 		} else {
-			time.Sleep(1000 * time.Millisecond)
+			time.Sleep(time.Duration(connectionDelay) * time.Millisecond)
 		}
 	}
 }
