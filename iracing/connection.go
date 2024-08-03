@@ -33,6 +33,8 @@ func NewConnection() *IRacingConnection {
 
 func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 	for {
+		start := time.Now()
+
 		c.irsdk.Update(true)
 
 		c.isConnected = c.irsdk.IsConnected()
@@ -108,7 +110,8 @@ func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 			c.event = &event
 			c.telemetry = &telemetry
 
-			time.Sleep(time.Duration(updateDelay) * time.Millisecond)
+			elapsed := time.Since(start)
+			time.Sleep(time.Duration(updateDelay)*time.Millisecond - elapsed)
 		} else {
 			time.Sleep(time.Duration(connectionDelay) * time.Millisecond)
 		}

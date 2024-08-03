@@ -16,8 +16,10 @@ type Data struct {
 	Data  interface{} `json:"data"`
 }
 
-func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection) {
+func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, fps int) {
 	for {
+		start := time.Now()
+
 		drivers, event, telemetry := iRacingConnection.GetData()
 
 		driversData := Data{
@@ -53,7 +55,8 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection) {
 			hub.broadcast <- telemetryOutput
 		}
 
-		time.Sleep(20 * time.Millisecond)
+		elapsed := time.Since(start)
+		time.Sleep(time.Second/time.Duration(fps) - elapsed)
 	}
 }
 
@@ -70,7 +73,7 @@ func main() {
 		serveWs(hub, w, r)
 	})
 
-	go sendDataToClients(hub, iRacingConnection)
+	go sendDataToClients(hub, iRacingConnection, 60)
 
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {
