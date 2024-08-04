@@ -15,8 +15,10 @@ type IRacingConnection struct {
 
 	isConnected bool
 	drivers     *[]common.Driver
-	event       *common.Event
+	race        *common.Race
 	telemetry   *common.Telemetry
+
+	chatTalkingIdx int
 }
 
 func NewConnection() *IRacingConnection {
@@ -26,12 +28,16 @@ func NewConnection() *IRacingConnection {
 		irsdk: irsdk,
 
 		drivers:   &[]common.Driver{},
-		event:     &common.Event{},
+		race:      &common.Race{},
 		telemetry: &common.Telemetry{},
+
+		chatTalkingIdx: -1,
 	}
 }
 
-func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
+func (c *IRacingConnection) Start(updateDelay int, connectionDelay int, eventChannel chan common.Event) {
+	// TODO: emit events
+
 	for {
 		start := time.Now()
 
@@ -94,7 +100,7 @@ func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 				}
 			}
 
-			event := common.Event{
+			race := common.Race{
 				TrackName: session.WeekendInfo.TrackDisplayName,
 			}
 
@@ -107,7 +113,7 @@ func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 			}
 
 			c.drivers = &drivers
-			c.event = &event
+			c.race = &race
 			c.telemetry = &telemetry
 
 			elapsed := time.Since(start)
@@ -118,6 +124,6 @@ func (c *IRacingConnection) Start(updateDelay int, connectionDelay int) {
 	}
 }
 
-func (c *IRacingConnection) GetData() (*[]common.Driver, *common.Event, *common.Telemetry) {
-	return c.drivers, c.event, c.telemetry
+func (c *IRacingConnection) GetData() (*[]common.Driver, *common.Race, *common.Telemetry) {
+	return c.drivers, c.race, c.telemetry
 }

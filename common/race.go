@@ -12,7 +12,7 @@ type Driver struct {
 	Gap         float32 `json:"gap"`
 }
 
-type Event struct {
+type Race struct {
 	TrackName string `json:"trackName"`
 }
 

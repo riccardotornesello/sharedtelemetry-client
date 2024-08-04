@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"sharedtelemetry/client/common"
 	"sharedtelemetry/client/iracing"
 	"sharedtelemetry/client/websocket"
 	"time"
@@ -21,7 +22,7 @@ func sendDataToClients(hub *websocket.Hub, iRacingConnection *iracing.IRacingCon
 	for {
 		start := time.Now()
 
-		drivers, event, telemetry := iRacingConnection.GetData()
+		drivers, race, telemetry := iRacingConnection.GetData()
 
 		driversData := Data{
 			Event: "drivers",
@@ -34,15 +35,15 @@ func sendDataToClients(hub *websocket.Hub, iRacingConnection *iracing.IRacingCon
 			hub.BroadcastMessage("drivers", driversOutput)
 		}
 
-		eventData := Data{
-			Event: "event",
-			Data:  event,
+		raceData := Data{
+			Event: "race",
+			Data:  race,
 		}
-		eventOutput, err := json.Marshal(eventData)
+		raceOutput, err := json.Marshal(raceData)
 		if err != nil {
 			log.Println("Error marshalling data: ", err)
 		} else {
-			hub.BroadcastMessage("event", eventOutput)
+			hub.BroadcastMessage("race", raceOutput)
 		}
 
 		telemetryData := Data{
@@ -67,8 +68,11 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	// TODO: emit events
+	eventsChannel := make(chan common.Event)
+
 	iRacingConnection := iracing.NewConnection()
-	go iRacingConnection.Start(10, 1000)
+	go iRacingConnection.Start(10, 1000, eventsChannel)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		websocket.ServeWs(hub, w, r)
