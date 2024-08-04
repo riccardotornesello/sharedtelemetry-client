@@ -1,4 +1,4 @@
-module example/sharedtelemetry
+module sharedtelemetry/client
 
 go 1.22.5
 

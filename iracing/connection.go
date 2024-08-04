@@ -1,7 +1,7 @@
 package iracing
 
 import (
-	"example/sharedtelemetry/common"
+	"sharedtelemetry/client/common"
 	"time"
 
 	"github.com/riccardotornesello/irsdk-go"

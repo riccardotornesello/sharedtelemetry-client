@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"example/sharedtelemetry/iracing"
 	"flag"
 	"log"
 	"net/http"
+	"sharedtelemetry/client/iracing"
+	"sharedtelemetry/client/websocket"
 	"time"
 )
 
@@ -16,7 +17,7 @@ type Data struct {
 	Data  interface{} `json:"data"`
 }
 
-func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, fps int) {
+func sendDataToClients(hub *websocket.Hub, iRacingConnection *iracing.IRacingConnection, fps int) {
 	for {
 		start := time.Now()
 
@@ -30,7 +31,7 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, f
 		if err != nil {
 			log.Println("Error marshalling data: ", err)
 		} else {
-			hub.broadcast <- driversOutput
+			hub.BroadcastMessage("drivers", driversOutput)
 		}
 
 		eventData := Data{
@@ -41,7 +42,7 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, f
 		if err != nil {
 			log.Println("Error marshalling data: ", err)
 		} else {
-			hub.broadcast <- eventOutput
+			hub.BroadcastMessage("event", eventOutput)
 		}
 
 		telemetryData := Data{
@@ -52,7 +53,7 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, f
 		if err != nil {
 			log.Println("Error marshalling data: ", err)
 		} else {
-			hub.broadcast <- telemetryOutput
+			hub.BroadcastMessage("telemetry", telemetryOutput)
 		}
 
 		elapsed := time.Since(start)
@@ -63,14 +64,14 @@ func sendDataToClients(hub *Hub, iRacingConnection *iracing.IRacingConnection, f
 func main() {
 	flag.Parse()
 
-	hub := newHub()
-	go hub.run()
+	hub := websocket.NewHub()
+	go hub.Run()
 
 	iRacingConnection := iracing.NewConnection()
 	go iRacingConnection.Start(10, 1000)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
+		websocket.ServeWs(hub, w, r)
 	})
 
 	go sendDataToClients(hub, iRacingConnection, 60)
