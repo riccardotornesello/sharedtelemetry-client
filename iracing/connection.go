@@ -1,6 +1,7 @@
 package iracing
 
 import (
+	"fmt"
 	"sharedtelemetry/client/common"
 	"time"
 
@@ -12,6 +13,7 @@ var tyrePos = [3]string{"L", "M", "R"}
 
 type IRacingConnection struct {
 	irsdk *irsdk.IRSDK
+	quit  chan struct{}
 
 	isConnected bool
 	drivers     *[]common.Driver
@@ -36,12 +38,12 @@ func NewConnection() *IRacingConnection {
 }
 
 func (c *IRacingConnection) Start(updateDelay int, connectionDelay int, eventChannel chan common.Event) {
-	// TODO: emit events
+	c.quit = make(chan struct{})
+
+	go c.refetchData(c.quit, updateDelay, 3)
 
 	for {
 		start := time.Now()
-
-		c.irsdk.Update(true)
 
 		c.isConnected = c.irsdk.IsConnected()
 
@@ -124,6 +126,38 @@ func (c *IRacingConnection) Start(updateDelay int, connectionDelay int, eventCha
 	}
 }
 
+func (c *IRacingConnection) Stop() {
+	close(c.quit)
+}
+
 func (c *IRacingConnection) GetData() (*[]common.Driver, *common.Race, *common.Telemetry) {
 	return c.drivers, c.race, c.telemetry
+}
+
+func (c *IRacingConnection) refetchData(quit chan struct{}, refreshRate int, sessionSkip int) {
+	i := 0
+
+	for {
+		select {
+		case <-quit:
+			return
+		default:
+			start := time.Now()
+
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Printf("Recovered from panic: %v\n", r)
+					}
+				}()
+
+				c.irsdk.Update(i == 0)
+				c.isConnected = c.irsdk.IsConnected()
+
+			}()
+
+			i = (i + 1) % sessionSkip
+			time.Sleep(time.Second/time.Duration(refreshRate) - time.Since(start))
+		}
+	}
 }
