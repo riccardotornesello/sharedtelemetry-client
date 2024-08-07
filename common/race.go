@@ -1,26 +1,25 @@
 package common
 
 type Driver struct {
-	Id          int     `json:"id"`
-	DriverName  string  `json:"driverName"`
-	TeamName    string  `json:"teamName"`
-	Position    int     `json:"position"`
-	CarNumber   int     `json:"carNumber"`
-	LastLapTime float32 `json:"lastLapTime"`
-	BestLapTime float32 `json:"bestLapTime"`
-	Rating      int     `json:"rating"`
-	Gap         float32 `json:"gap"`
+	Id         int    `json:"id"`
+	DriverName string `json:"driverName"`
+	TeamName   string `json:"teamName"`
+	CarNumber  int    `json:"carNumber"`
+	Rating     int    `json:"rating"`
 }
 
-type Race struct {
+type Session struct {
 	TrackName string `json:"trackName"`
 }
 
-type Telemetry struct {
-	Throttle float32 `json:"throttle"`
-	Brake    float32 `json:"brake"`
-	Steer    float32 `json:"steer"`
+type InputTelemetry struct {
+	Throttle    float32 `json:"throttle"`
+	Brake       float32 `json:"brake"`
+	Steering    float32 `json:"steering"`
+	SteeringMax float32 `json:"steeringMax"`
+}
 
+type CarTelemetry struct {
 	Tyres [4]Tyre `json:"tyres"`
 }
 

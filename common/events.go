@@ -3,11 +3,13 @@ package common
 type EventName string
 
 const (
-	VOICE_CHAT_START EventName = "VOICE_CHAT_START"
-	VOICE_CHAT_END   EventName = "VOICE_CHAT_END"
+	EventDrivers        EventName = "drivers"
+	EventSession        EventName = "session"
+	EventInputTelemetry EventName = "inputTelemetry"
+	EventCarTelemetry   EventName = "carTelemetry"
 )
 
 type Event struct {
-	name      EventName
-	driverIdx int
+	Event EventName   `json:"event"`
+	Data  interface{} `json:"data"`
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sharedtelemetry/client/common"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -32,8 +33,8 @@ var upgrader = websocket.Upgrader{
 
 type Client struct {
 	hub           *Hub
-	conn          *websocket.Conn // The websocket connection.
-	send          chan Message    // Buffered channel of outbound messages.
+	conn          *websocket.Conn   // The websocket connection.
+	send          chan common.Event // Buffered channel of outbound messages.
 	subscriptions []string
 }
 
@@ -78,7 +79,7 @@ func (c *Client) writePump() {
 	}()
 	for {
 		select {
-		case message, ok := <-c.send:
+		case event, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -87,24 +88,27 @@ func (c *Client) writePump() {
 			}
 
 			// Check if message.subscription is in c.subscriptions
-			if len(c.subscriptions) > 0 {
-				var found bool
-				for _, sub := range c.subscriptions {
-					if sub == message.subscription {
-						found = true
-						break
-					}
+			if len(c.subscriptions) == 0 {
+				continue
+			}
+
+			var found bool
+			for _, sub := range c.subscriptions {
+				if sub == string(event.Event) {
+					found = true
+					break
 				}
-				if !found {
-					continue
-				}
+			}
+			if !found {
+				continue
 			}
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
-			w.Write(message.data)
+			data, _ := json.Marshal(event)
+			w.Write(data)
 
 			if err := w.Close(); err != nil {
 				return
@@ -124,7 +128,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan Message)}
+	client := &Client{hub: hub, conn: conn, send: make(chan common.Event, 256)}
 	client.hub.register <- client
 
 	go client.writePump()
