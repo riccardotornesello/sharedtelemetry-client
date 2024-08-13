@@ -49,6 +49,8 @@ func (c *IRacingConnection) checkUpdates(
 
 	drivers := fetchDrivers(session)
 	sessionInfo := fetchSessionInfo(session)
+	radioSpeakingCarIdx := -1
+	flags := make([]common.Flag, 0)
 
 	for {
 		select {
@@ -97,12 +99,38 @@ func (c *IRacingConnection) checkUpdates(
 					Event: common.EventCarTelemetry,
 					Data:  carTelemetry,
 				}
+
+				newRadioSpeakingCarIdx, ok := c.irsdk.GetVar("RadioTransmitCarIdx")
+				if !ok {
+					newRadioSpeakingCarIdx = -1
+				}
+				if newRadioSpeakingCarIdx != radioSpeakingCarIdx {
+					radioSpeakingCarIdx = newRadioSpeakingCarIdx.(int)
+					eventChannel <- common.Event{
+						Event: common.EventRadio,
+						Data: common.Radio{
+							SpeakingCarIdx: radioSpeakingCarIdx,
+						},
+					}
+				}
+
+				newFlags := make([]common.Flag, 0)
+				newFlagsValue, ok := c.irsdk.GetVar("SessionFlags")
+				if ok {
+					newFlags = fetchFlags(newFlagsValue.(int))
+				}
+				if !reflect.DeepEqual(flags, newFlags) {
+					flags = newFlags
+					eventChannel <- common.Event{
+						Event: common.EventFlags,
+						Data:  flags,
+					}
+				}
 			}()
 
 			time.Sleep(time.Second/time.Duration(refreshRate) - time.Since(start))
 		}
 	}
-
 }
 
 func (c *IRacingConnection) refetchData(quit chan struct{}, refreshRate int, sessionRefreshRate int) {

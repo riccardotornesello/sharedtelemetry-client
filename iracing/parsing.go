@@ -33,13 +33,14 @@ func fetchInputTelemetry(irsdk *irsdk.IRSDK) *common.InputTelemetry {
 	var brakeValue float32
 	var steeringValue float32
 	var steeringMaxValue float32
+	var clutchValue float32
 
-	throttle, ok := irsdk.GetVar("Throttle")
+	throttle, ok := irsdk.GetVar("ThrottleRaw")
 	if ok {
 		throttleValue = throttle.(float32)
 	}
 
-	brake, ok := irsdk.GetVar("Brake")
+	brake, ok := irsdk.GetVar("BrakeRaw")
 	if ok {
 		brakeValue = brake.(float32)
 	}
@@ -54,11 +55,17 @@ func fetchInputTelemetry(irsdk *irsdk.IRSDK) *common.InputTelemetry {
 		steeringMaxValue = steeringMax.(float32)
 	}
 
+	clutch, ok := irsdk.GetVar("Clutch")
+	if ok {
+		clutchValue = clutch.(float32)
+	}
+
 	return &common.InputTelemetry{
 		Throttle:    throttleValue,
 		Brake:       brakeValue,
 		Steering:    steeringValue,
 		SteeringMax: steeringMaxValue,
+		Clutch:      clutchValue,
 	}
 }
 

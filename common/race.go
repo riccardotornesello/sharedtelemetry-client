@@ -17,6 +17,7 @@ type InputTelemetry struct {
 	Brake       float32 `json:"brake"`
 	Steering    float32 `json:"steering"`
 	SteeringMax float32 `json:"steeringMax"`
+	Clutch      float32 `json:"clutch"`
 }
 
 type CarTelemetry struct {
@@ -26,4 +27,8 @@ type CarTelemetry struct {
 type Tyre struct {
 	TempCarcass [3]float32 `json:"tempCarcass"`
 	TempSurface [3]float32 `json:"tempSurface"`
+}
+
+type Radio struct {
+	SpeakingCarIdx int `json:"speakingCarIdx"`
 }

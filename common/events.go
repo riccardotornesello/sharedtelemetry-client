@@ -7,6 +7,8 @@ const (
 	EventSession        EventName = "session"
 	EventInputTelemetry EventName = "inputTelemetry"
 	EventCarTelemetry   EventName = "carTelemetry"
+	EventRadio          EventName = "radio"
+	EventFlags          EventName = "flags"
 )
 
 type Event struct {
