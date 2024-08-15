@@ -2,7 +2,7 @@ package iracing
 
 import "sharedtelemetry/client/common"
 
-type IRSDKFlagBitmap int
+type IRSDKFlagBitmap uint32
 
 const (
 	IRSDKFlagCheckered     IRSDKFlagBitmap = 0x00000001
@@ -60,11 +60,11 @@ var IRSDKFlagNames = map[IRSDKFlagBitmap]common.Flag{
 	IRSDKFlagStartGo:       common.FlagStartGo,
 }
 
-func fetchFlags(flags int) []common.Flag {
+func fetchFlags(flags uint32) []common.Flag {
 	var extractedFlags []common.Flag
 
 	for flag, name := range IRSDKFlagNames {
-		if flags&int(flag) != 0 {
+		if flags&uint32(flag) != 0 {
 			extractedFlags = append(extractedFlags, name)
 		}
 	}

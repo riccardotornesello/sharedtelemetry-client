@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sharedtelemetry/client/common"
@@ -65,7 +66,9 @@ func (c *Client) readPump() {
 
 		config := ConfigurationMessage{}
 		err = json.Unmarshal(message, &config)
-		if err == nil {
+		if err != nil {
+			fmt.Println("Error parsing configuration message", err)
+		} else {
 			c.subscriptions = config.Subscribe
 		}
 	}

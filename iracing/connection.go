@@ -117,7 +117,7 @@ func (c *IRacingConnection) checkUpdates(
 				newFlags := make([]common.Flag, 0)
 				newFlagsValue, ok := c.irsdk.GetVar("SessionFlags")
 				if ok {
-					newFlags = fetchFlags(newFlagsValue.(int))
+					newFlags = fetchFlags(newFlagsValue.(uint32))
 				}
 				if !reflect.DeepEqual(flags, newFlags) {
 					flags = newFlags
